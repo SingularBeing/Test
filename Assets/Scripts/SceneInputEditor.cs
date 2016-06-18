@@ -6,6 +6,8 @@ using UnityEditor;
 public class SceneInputEditor : Editor
 {
 
+	private const int lineSteps = 10;
+
 	void OnSceneGUI ()
 	{
 		SceneInput input = (SceneInput)target;

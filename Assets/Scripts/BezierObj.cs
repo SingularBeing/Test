@@ -31,17 +31,23 @@ public class BezierObj : System.Object
 		this.p2 = v2; 
 		this.p3 = v3; 
 	}
-	// 0.0 >= t <= 1.0
+	// 0.0 >= t <= 1.0 In here be dragons and magic
 	public Vector3 GetPointAtTime (float t)
-	{ 
-		this.CheckConstant (); 
-		float t2 = t * t; 
-		float t3 = t * t * t; 
-		float x = this.Ax * t3 + this.Bx * t2 + this.Cx * t + p0.x; 
-		float y = this.Ay * t3 + this.By * t2 + this.Cy * t + p0.y; 
-		float z = this.Az * t3 + this.Bz * t2 + this.Cz * t + p0.z; 
-		return new Vector3 (x, y, z); 
+	{
+		float u = 1f - t;
+		float tt = t * t;
+		float uu = u * u;
+		float uuu = uu * u;
+		float ttt = tt * t;
+
+		Vector3 p = uuu * p0; //first term
+		p += 3 * uu * t * p1; //second term
+		p += 3 * u * tt * p2; //third term
+		p += ttt * p3; //fourth term
+
+		return p;
 	}
+
 
 	private void SetConstant ()
 	{ 
@@ -65,6 +71,16 @@ public class BezierObj : System.Object
 			this.b2 = this.p2; 
 			this.b3 = this.p3; 
 		} 
+	}
+
+	public Vector3 GetPoint (Vector3 p0, Vector3 p1, Vector3 p2, float t)
+	{
+		t = Mathf.Clamp01 (t);
+		float oneMinusT = 1f - t;
+		return
+			oneMinusT * oneMinusT * p0 +
+		2f * oneMinusT * t * p1 +
+		t * t * p2;
 	}
 
 	float length = 0;
@@ -115,5 +131,11 @@ public class BezierObj : System.Object
 		}
 
 		//CheckConstant ();
+	}
+
+	public Vector3 GetFirstDerivative (Vector3 p0, Vector3 p1, Vector3 p2, float t)
+	{
+		return 
+			2f * (1f - t) * (p1 - p0) + 2f * t * (p2 - p1);
 	}
 }

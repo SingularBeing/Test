@@ -5,6 +5,7 @@ using System.Collections.Generic;
 public class SceneInput : MonoBehaviour
 {
 	public RedBall _redBall;
+	public StillPositionBAll _still;
 
 	public List<Vector3> m_MousePositions = new List<Vector3> ();
 	public List<BezierPoint> m_Points = new List<BezierPoint> ();
@@ -16,8 +17,12 @@ public class SceneInput : MonoBehaviour
 
 	public Vector3 _outStartTangent, _outEndTangent;
 
+
+
 	void Update ()
 	{
+		
+
 		//check for the left mouse button
 		if (Input.GetMouseButtonDown (0)) {
 			m_MousePositions.Clear ();
@@ -50,6 +55,7 @@ public class SceneInput : MonoBehaviour
 			Gizmos.color = Color.green;
 			if (m_Points.Count > 0) {
 				foreach (BezierPoint point in m_Points) {
+					Gizmos.color = point.distortion > 0 ? Color.black : Color.green;
 					Gizmos.DrawSphere (point.position, 0.065f);
 				}
 			}
@@ -61,14 +67,33 @@ public class SceneInput : MonoBehaviour
 			/*Gizmos.color = Color.yellow;
 			Gizmos.DrawSphere (_startTangent, 0.06f);
 			Gizmos.DrawSphere (_endTangent, 0.06f);*/
+
+			Gizmos.color = Color.cyan;
+			Gizmos.DrawSphere (actualPositionOnSpline, 0.07f);
 		}
 	}
+
+	Vector3 actualPositionOnSpline;
+
+	/*void DeleteSomePoints ()
+	{
+		for (int i = 0; i < m_MousePositions.Count; i++) {
+			if (i + 1 == m_MousePositions.Count - 1 || i == 0 || i == m_MousePositions.Count - 1)
+				continue;
+
+			//Debug.Log ("DIS:" + Vector3.Distance (m_MousePositions [i], m_MousePositions [i + 1]));
+			if (Vector3.Distance (m_MousePositions [i], m_MousePositions [i + 1]) < 0.2f) {
+				m_MousePositions.RemoveAt (i);
+			}
+		}
+	}*/
 
 	void CalculateAllPoints ()
 	{
 		//grab end points
 		_startPoint = m_MousePositions [0];
 		_endPoint = m_MousePositions [m_MousePositions.Count - 1];
+		//DeleteSomePoints ();
 		//grab handle points
 		//check to see how many points there are
 		int _pointAmount = m_MousePositions.Count;
@@ -86,22 +111,48 @@ public class SceneInput : MonoBehaviour
 
 		Debug.Log (slope);
 		//if the slope is negative, it is going downward. This means we need to move to the right
-		//grab the distance from the first position to the current
-		/*if (slope < 0) {
-			this._startTangent = this._startTangent * 2;
-			this._endTangent = this._endTangent * 2;
-		} else if (slope > 0) {
-			this._startTangent = this._startTangent * -2;
-			this._endTangent = this._endTangent * -2;
-		}*/
-		this._outStartTangent = this._startTangent * 2;
-		this._outStartTangent.Normalize ();
-		this._outEndTangent = this._endTangent * 2;
-		this._outEndTangent.Normalize ();
+
+		float timeDif = 1f / _startTangent;
+		_still._t = timeDif;
+
+		CalculateSpeedValues ();
+
 		//Debug.Log (string.Format ("StartPos: {0}, EndPos: {1}, StartTang: {2}, EndTang: {3}", _startPoint, _endPoint, _startTangent, _endTangent));
 		_bezier = new BezierObj (this._startPoint, this._startTangent, this._endTangent, this._endPoint);
-		_redBall._bezier = _bezier;
+		_redBall._bezier = _still._bezier = _bezier;
+
 		GenerateEqualDistancePoints ();
+	}
+
+	void CalculateSpeedValues ()
+	{
+		//check between each point, if over a max threshold, set the speed equivalent
+		for (int i = 0; i < m_MousePositions.Count; i++) {
+			if (i + 1 == m_MousePositions.Count - 1 || i == 0 || i == m_MousePositions.Count - 1)
+				continue;
+
+			float _mD = Vector3.Distance (m_MousePositions [i], m_MousePositions [i + 1]);
+			if (_mD < 0.2f) {
+				Debug.Log ("UNDER 0.2");
+				//set the distance accordingly
+				//find the nearest node
+				float dis = 10000f;
+				int currentIndex = -1;
+				for (int x = 0; x < m_Points.Count; x++) {
+					float _d = Vector3.Distance (m_MousePositions [i + 1], m_Points [x].position);
+					if (_d < dis) {
+						currentIndex = x;
+						dis = _d;
+					}
+				}
+
+				if (currentIndex != -1) {
+					Debug.Log ("Pointme: " + currentIndex);
+					m_Points [currentIndex].distortion = 1;
+					Debug.Log ("Speed:" + m_Points [currentIndex].distortion);
+				}
+			}
+		}
 	}
 
 	void GenerateEqualDistancePoints ()
@@ -109,7 +160,7 @@ public class SceneInput : MonoBehaviour
 		m_Points.Clear ();
 		int startGreenPos = (int)(m_MousePositions.Count / 6.5f);
 		for (int i = 0; i < 6; i++) {
-			m_Points.Add (new BezierPoint (Vector3.zero, m_MousePositions [startGreenPos * (i + 1)]));
+			m_Points.Add (new BezierPoint (0, m_MousePositions [startGreenPos * (i + 1)]));
 		}
 	}
 
@@ -138,15 +189,14 @@ public class SceneInput : MonoBehaviour
 
 }
 
-[System.Serializable]
 public class BezierPoint
 {
-	public Vector3 speed;
+	public float distortion;
 	public Vector3 position;
 
-	public BezierPoint (Vector3 _s, Vector3 _p)
+	public BezierPoint (float _s, Vector3 _p)
 	{
-		this.speed = _s;
+		this.distortion = _s;
 		this.position = _p;
 	}
 }

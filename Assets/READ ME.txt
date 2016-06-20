@@ -1,2 +1,14 @@
-Right now, you can only do multiples of 3
-(3, 6, 9, 12, 15, 18, 21, etc)
+Things I accomplished:
+*Path creation from mouse Input
+*Storing of the mouse speed in each node
+*Visualization of the mouse speed in each node with a different color
+*Red ball movement along the path
+*Creation of the visual of the paths
+*Fully commented code
+
+Things I failed at:
+*Right now, you can only do the value of 16. Others seem to mess it up
+*The magnetic bezier curve hasn't wanted to work right. I tried to make it work, but couldn't.
+*The magnetic bezier curve only works on a normal right curve and sometimes on a normal left curve
+*Creation of the magnetic bezier curve at the fast mouse moving locations. Right now it only is created at the base of the spline.
+*The magnetic bezier curve can get enlongated or odd at weird values. 16 seems to be the 'middle-ground' of the base values
